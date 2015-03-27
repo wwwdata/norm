@@ -1,6 +1,10 @@
 package norm
 
-import "github.com/jmcvetta/neoism"
+import (
+	"reflect"
+
+	"github.com/jmcvetta/neoism"
+)
 
 // A Database connects to neo4j and initiates all further queries
 type Database struct {
@@ -31,7 +35,7 @@ func (d Database) FindNodes(label string, destination interface{}) *Query {
 		action:      typeRead,
 		db:          d.db,
 		label:       label,
-		resultNodes: destination,
+		resultNodes: reflect.ValueOf(destination),
 	}
 
 	return &query

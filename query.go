@@ -17,7 +17,7 @@ type Query struct {
 	db          *neoism.Database
 	action      string // can be either typeRead or typeWrite
 	label       string
-	resultNodes interface{} // must be a pointer to a slice of something that implements the interface `Label`
+	resultNodes reflect.Value // must be a pointer to a slice of something that implements the interface `Label`
 	newNode     Label
 	lastID      int
 }
@@ -51,13 +51,11 @@ func (q *Query) createNode() error {
 }
 
 func (q *Query) findNodes() error {
-	refValue := reflect.ValueOf(q.resultNodes)
-	if refValue.Type().Kind() != reflect.Ptr || refValue.Elem().Kind() != reflect.Slice {
+	if q.resultNodes.Type().Kind() != reflect.Ptr || q.resultNodes.Elem().Kind() != reflect.Slice {
 		return errors.New("desination must be a pointer to a slice")
 	}
 
-	destinationType := reflect.TypeOf(q.resultNodes).Elem().Elem()
-	result := []interface{}{}
+	destinationType := q.resultNodes.Type().Elem().Elem()
 
 	nodes, err := q.db.NodesByLabel(q.label)
 	if err != nil {
@@ -77,11 +75,9 @@ func (q *Query) findNodes() error {
 			field.Set(reflect.ValueOf(prop).Convert(field.Type()))
 		}
 
-		result = append(result, destination.Interface())
+		result := q.resultNodes.Elem()
+		result.Set(reflect.Append(result, destination))
 	}
-
-	// TODO: this does not work, the reference is gone
-	q.resultNodes = &result
 
 	return nil
 }
@@ -96,11 +92,6 @@ func (q *Query) Commit() error {
 	default:
 		return errors.New("Something really went terribly wrong")
 	}
-}
-
-// GetNodes shit, I intended to directly write in the variable passed by reference from the db object... figure out how to do that
-func (q *Query) GetNodes() *[]interface{} {
-	return q.resultNodes.(*[]interface{})
 }
 
 // GetLastID returns the internal neo4j ID of the last generated node. This should not be interesting, because the IDs
