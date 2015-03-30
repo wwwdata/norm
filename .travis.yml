@@ -6,15 +6,15 @@ go:
   - 1.4
   - tip
 
-services:
-  - neo4j
-
 install:
   - go get -t -d -v ./...
   - go get github.com/onsi/ginkgo/ginkgo
 
 env:
-  - NORM_NEO4J_URL=http://localhost:7474
+  - NORM_NEO4J_URL=http://localhost:7474/db/data
+
+before_install:
+  - sh start-neo4j.sh
 
 script:
   - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress
